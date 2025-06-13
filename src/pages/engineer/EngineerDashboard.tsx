@@ -11,7 +11,9 @@ import {
   TrendingUp,
   CheckCircle,
   AlertTriangle,
-  Briefcase
+  Briefcase,
+  AlertCircle,
+  BarChart2
 } from 'lucide-react';
 
 import AssignmentDetailModal from './components/assignments/AssignmentDetailModal';
@@ -173,7 +175,7 @@ export const EngineerDashboard: React.FC = () => {
   }, [categorizedAssignments.activeAssignments]);
 
   const availableCapacity = useMemo(() => {
-    return (user?.maxCapacity );
+    return (user?.maxCapacity || 100) - capacityUsed;
   }, [user?.maxCapacity, capacityUsed]);
 
   const getCapacityStatus = () => {
@@ -186,42 +188,49 @@ export const EngineerDashboard: React.FC = () => {
 
   const capacityStatus = getCapacityStatus();
 
+  // Same loader as Manager Dashboard - FIXED SIZE
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <div className="text-red-500 text-xl mb-4">{error}</div>
-        <button 
-          onClick={() => window.location.reload()}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          Retry
-        </button>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="bg-red-50 p-6 rounded-lg max-w-md">
+          <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
+          <p className="text-red-800 text-center">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="mt-4 w-full bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+          >
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      {/* Header - Matching Manager Dashboard Style */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-6 space-y-4 sm:space-y-0">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Engineer Dashboard</h1>
-              <p className="text-gray-600">Welcome back, {user?.name}</p>
+              <p className="text-gray-600 mt-1">Welcome back, {user?.name}</p>
             </div>
             <div className="flex space-x-3">
               <button
                 onClick={logout}
-                className="flex items-center px-4 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50"
+                className="flex items-center px-4 py-2 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
               >
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
@@ -231,9 +240,9 @@ export const EngineerDashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Quick Stats - Responsive Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center">
               <div className="p-3 rounded-lg bg-blue-100">
@@ -280,24 +289,24 @@ export const EngineerDashboard: React.FC = () => {
                 <CheckCircle className={`h-6 w-6 ${capacityStatus.color}`} />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Max Capacity</p>
-                <p className={`text-2xl font-bold ${capacityStatus.color}`}>
-                  {availableCapacity}%
+                <p className="text-sm font-medium text-gray-600">Status</p>
+                <p className={`text-lg font-bold ${capacityStatus.color}`}>
+                  {capacityStatus.label}
                 </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="bg-white rounded-lg shadow mb-8">
+        {/* Tab Navigation - Matching Manager Dashboard */}
+        <div className="bg-white rounded-lg shadow">
           <div className="border-b border-gray-200">
-            <nav className="flex space-x-8 px-6">
+            <nav className="flex -mb-px overflow-x-auto">
               <button
                 onClick={() => setActiveTab('overview')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                className={`py-4 px-6 font-medium text-sm border-b-2 whitespace-nowrap ${
                   activeTab === 'overview'
-                    ? 'border-blue-500 text-blue-600'
+                    ? 'border-indigo-500 text-indigo-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
@@ -305,41 +314,46 @@ export const EngineerDashboard: React.FC = () => {
               </button>
               <button
                 onClick={() => setActiveTab('assignments')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                className={`py-4 px-6 font-medium text-sm border-b-2 flex items-center whitespace-nowrap ${
                   activeTab === 'assignments'
-                    ? 'border-blue-500 text-blue-600'
+                    ? 'border-indigo-500 text-indigo-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
+                <Calendar className="h-4 w-4 mr-2" />
                 My Assignments
               </button>
               <button
                 onClick={() => setActiveTab('profile')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                className={`py-4 px-6 font-medium text-sm border-b-2 flex items-center whitespace-nowrap ${
                   activeTab === 'profile'
-                    ? 'border-blue-500 text-blue-600'
+                    ? 'border-indigo-500 text-indigo-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
+                <User className="h-4 w-4 mr-2" />
                 My Profile
               </button>
             </nav>
           </div>
 
-          <div className="p-6">
+          {/* Tab Content */}
+          <div className="p-4 sm:p-6">
             {activeTab === 'overview' && (
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Dashboard Overview</h2>
-                <p className="text-gray-600 mb-6">
-                  Here's an overview of your current assignments and capacity. Use the tabs above to navigate to different sections.
-                </p>
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Dashboard Overview</h2>
+                  <p className="text-gray-600 mt-1">
+                    Here's an overview of your current assignments and capacity. Use the tabs above to navigate to different sections.
+                  </p>
+                </div>
 
-                {/* Capacity Overview */}
-                <div className="mb-8">
-                  <div className="flex items-center justify-between mb-4">
+                {/* Capacity Overview - Improved Design */}
+                <div className="bg-gray-50 rounded-lg p-4 sm:p-6">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-2 sm:space-y-0">
                     <h3 className="text-lg font-medium text-gray-900">Capacity Overview</h3>
                     <div className={`flex items-center px-3 py-1 rounded-full ${capacityStatus.bgColor}`}>
-                      <CheckCircle className={`h-4 w-4 mr-2 ${capacityStatus.color}`} />
+                                            <CheckCircle className={`h-4 w-4 mr-2 ${capacityStatus.color}`} />
                       <span className={`text-sm font-medium ${capacityStatus.color}`}>
                         {capacityStatus.label}
                       </span>
@@ -361,22 +375,23 @@ export const EngineerDashboard: React.FC = () => {
                       />
                     </div>
                     {availableCapacity < 0 && (
-                      <p className="text-red-600 text-sm mt-1">
-                        ⚠️ Overallocated by {Math.abs(availableCapacity)}%
+                      <p className="text-red-600 text-sm mt-1 flex items-center">
+                        <AlertTriangle className="h-4 w-4 mr-1" />
+                        Overallocated by {Math.abs(availableCapacity)}%
                       </p>
                     )}
                   </div>
 
-                                    {categorizedAssignments.activeAssignments.length > 0 ? (
+                  {categorizedAssignments.activeAssignments.length > 0 ? (
                     <div>
                       <h4 className="text-md font-medium text-gray-900 mb-3">
                         Active Assignments Breakdown
                       </h4>
                       <div className="space-y-3">
                         {categorizedAssignments.activeAssignments.map((assignment) => (
-                          <div key={assignment._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                            <div className="flex-1">
-                              <div className="text-sm font-medium text-gray-900">
+                          <div key={assignment._id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 bg-white rounded-lg border border-gray-200 space-y-2 sm:space-y-0">
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-medium text-gray-900 truncate">
                                 {assignment.project?.name || 'Unknown Project'}
                               </div>
                               <div className="text-xs text-gray-500">
@@ -389,8 +404,8 @@ export const EngineerDashboard: React.FC = () => {
                               </div>
                               <div className="w-16 bg-gray-200 rounded-full h-2">
                                 <div 
-                                  className="bg-blue-500 h-2 rounded-full"
-                                  style={{ width: `${(assignment.allocationPercentage / (user?.maxCapacity || 100)) * 100}%` }}
+                                  className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                                  style={{ width: `${Math.min((assignment.allocationPercentage / (user?.maxCapacity || 100)) * 100, 100)}%` }}
                                 />
                               </div>
                             </div>
@@ -399,58 +414,115 @@ export const EngineerDashboard: React.FC = () => {
                       </div>
                     </div>
                   ) : (
-                    <p className="text-gray-500 italic">No active assignments</p>
+                    <div className="text-center py-8">
+                      <Briefcase className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-500 text-lg">No active assignments</p>
+                      <p className="text-gray-400 text-sm">You're currently available for new projects</p>
+                    </div>
                   )}
                 </div>
 
                 {/* Capacity Calendar */}
                 {assignments.length > 0 && (
-                  <div className="mb-8">
-                    <h3 className="text-lg font-medium text-gray-900 mb-4">Capacity Forecast</h3>
+                  <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
+                    <div className="flex items-center mb-4">
+                      <BarChart2 className="h-5 w-5 text-indigo-600 mr-2" />
+                      <h3 className="text-lg font-medium text-gray-900">Capacity Forecast</h3>
+                    </div>
                     <SimpleCapacityCalendar assignments={assignments} />
                   </div>
                 )}
+
+                {/* Quick Actions */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <button 
+                    onClick={() => setActiveTab('assignments')}
+                    className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow text-left"
+                  >
+                    <Calendar className="h-8 w-8 text-blue-600 mb-2" />
+                    <h4 className="font-medium text-gray-900">View All Assignments</h4>
+                    <p className="text-sm text-gray-500 mt-1">See all your current and upcoming work</p>
+                  </button>
+                  
+                  <button 
+                    onClick={() => setActiveTab('profile')}
+                    className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow text-left"
+                  >
+                    <User className="h-8 w-8 text-green-600 mb-2" />
+                    <h4 className="font-medium text-gray-900">My Profile</h4>
+                    <p className="text-sm text-gray-500 mt-1">View and manage your profile information</p>
+                  </button>
+
+                  <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg p-4 text-white sm:col-span-2 lg:col-span-1">
+                    <TrendingUp className="h-8 w-8 mb-2" />
+                    <h4 className="font-medium">Capacity Status</h4>
+                    <p className="text-sm opacity-90 mt-1">
+                      {availableCapacity > 0 
+                        ? `${availableCapacity}% capacity available`
+                        : availableCapacity === 0 
+                        ? 'Fully allocated'
+                        : 'Overallocated'
+                      }
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
 
             {activeTab === 'assignments' && (
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-6">My Assignments</h2>
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">My Assignments</h2>
+                  <p className="text-gray-600 mt-1">Manage and track all your project assignments</p>
+                </div>
                 
                 {/* Active Assignments */}
-                <div className="mb-8">
-                  <h3 className="text-md font-medium text-gray-900 mb-4">Active Assignments</h3>
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-medium text-gray-900 flex items-center">
+                      <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
+                      Active Assignments
+                    </h3>
+                    <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                      {categorizedAssignments.activeAssignments.length} active
+                    </span>
+                  </div>
+                  
                   {categorizedAssignments.activeAssignments.length > 0 ? (
-                    <div className="space-y-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       {categorizedAssignments.activeAssignments.map((assignment) => (
                         <div
                           key={assignment._id}
                           onClick={() => setSelectedAssignment(assignment)}
-                          className="border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-blue-300 transition-all cursor-pointer"
+                          className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 hover:shadow-md hover:border-indigo-300 transition-all cursor-pointer"
                         >
                           <div className="flex justify-between items-start mb-3">
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between">
-                                <h4 className="text-lg font-medium text-gray-900">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-2">
+                                <h4 className="text-lg font-medium text-gray-900 truncate">
                                   {assignment.project?.name || 'Unknown Project'}
                                 </h4>
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 ml-2 flex-shrink-0">
                                   {assignment.allocationPercentage}%
                                 </span>
                               </div>
                               
-                              <div className="flex items-center mt-2 text-sm text-gray-600">
-                                <User className="h-4 w-4 mr-1" />
-                                <span className="mr-4">{assignment.role}</span>
+                              <div className="flex flex-col sm:flex-row sm:items-center text-sm text-gray-600 space-y-1 sm:space-y-0 sm:space-x-4">
+                                <div className="flex items-center">
+                                  <User className="h-4 w-4 mr-1 flex-shrink-0" />
+                                  <span className="truncate">{assignment.role}</span>
+                                </div>
                                 
-                                <Calendar className="h-4 w-4 mr-1" />
-                                <span>
-                                  {new Date(assignment.startDate).toLocaleDateString()} - {new Date(assignment.endDate).toLocaleDateString()}
-                                </span>
+                                <div className="flex items-center">
+                                  <Calendar className="h-4 w-4 mr-1 flex-shrink-0" />
+                                  <span className="text-xs">
+                                    {new Date(assignment.startDate).toLocaleDateString()} - {new Date(assignment.endDate).toLocaleDateString()}
+                                  </span>
+                                </div>
                               </div>
 
                               <div className="flex items-center mt-2 text-sm text-gray-500">
-                                <Clock className="h-4 w-4 mr-1" />
+                                <Clock className="h-4 w-4 mr-1 flex-shrink-0" />
                                 <span>
                                   {(() => {
                                     const now = new Date();
@@ -463,16 +535,16 @@ export const EngineerDashboard: React.FC = () => {
                             </div>
                           </div>
 
-                          <div className="mt-3">
+                          <div className="mt-4">
                             <div className="flex justify-between text-sm text-gray-600 mb-1">
                               <span>Allocation</span>
                               <span>{assignment.allocationPercentage}%</span>
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-2">
                               <div 
-                                className="h-2 rounded-full bg-green-500"
+                                className="h-2 rounded-full bg-green-500 transition-all duration-300"
                                 style={{ width: `${Math.min(assignment.allocationPercentage, 100)}%` }}
-                              ></div>
+                              />
                             </div>
                           </div>
 
@@ -485,36 +557,49 @@ export const EngineerDashboard: React.FC = () => {
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      No active assignments
+                    <div className="text-center py-12 bg-gray-50 rounded-lg">
+                      <CheckCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No active assignments</h3>
+                      <p className="text-gray-500">You're currently available for new projects</p>
                     </div>
                   )}
                 </div>
 
                 {/* Upcoming Assignments */}
                 {categorizedAssignments.upcomingAssignments.length > 0 && (
-                  <div className="mb-8">
-                    <h3 className="text-md font-medium text-gray-900 mb-4">Upcoming Assignments</h3>
-                    <div className="space-y-4">
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-medium text-gray-900 flex items-center">
+                        <Calendar className="h-5 w-5 text-blue-600 mr-2" />
+                        Upcoming Assignments
+                      </h3>
+                      <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                        {categorizedAssignments.upcomingAssignments.length} upcoming
+                      </span>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       {categorizedAssignments.upcomingAssignments.map((assignment) => (
                         <div
                           key={assignment._id}
                           onClick={() => setSelectedAssignment(assignment)}
-                          className="border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-blue-300 transition-all cursor-pointer"
+                          className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 hover:shadow-md hover:border-blue-300 transition-all cursor-pointer"
                         >
-                          <div className="flex justify-between items-center">
-                            <div className="flex-1">
-                              <h4 className="text-lg font-medium text-gray-900">
-                                {assignment.project?.name || 'Unknown Project'}
-                              </h4>
-                              <div className="flex items-center mt-1 text-sm text-gray-600">
-                                <span className="mr-4">{assignment.role}</span>
-                                <span>Starts: {new Date(assignment.startDate).toLocaleDateString()}</span>
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-2">
+                                <h4 className="text-lg font-medium text-gray-900 truncate">
+                                  {assignment.project?.name || 'Unknown Project'}
+                                </h4>
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 ml-2 flex-shrink-0">
+                                  {assignment.allocationPercentage}%
+                                </span>
+                              </div>
+                              <div className="flex flex-col sm:flex-row sm:items-center text-sm text-gray-600 space-y-1 sm:space-y-0 sm:space-x-4">
+                                <span className="truncate">{assignment.role}</span>
+                                <span className="text-xs">Starts: {new Date(assignment.startDate).toLocaleDateString()}</span>
                               </div>
                             </div>
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              {assignment.allocationPercentage}%
-                            </span>
                           </div>
                         </div>
                       ))}
@@ -525,27 +610,38 @@ export const EngineerDashboard: React.FC = () => {
                 {/* Recent Completed Assignments */}
                 {categorizedAssignments.pastAssignments.length > 0 && (
                   <div>
-                    <h3 className="text-md font-medium text-gray-900 mb-4">Recently Completed</h3>
-                    <div className="space-y-4">
-                      {categorizedAssignments.pastAssignments.slice(0, 3).map((assignment) => (
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-medium text-gray-900 flex items-center">
+                        <CheckCircle className="h-5 w-5 text-gray-600 mr-2" />
+                        Recently Completed
+                      </h3>
+                      <span className="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                        {categorizedAssignments.pastAssignments.length} completed
+                      </span>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                      {categorizedAssignments.pastAssignments.slice(0, 4).map((assignment) => (
                         <div
                           key={assignment._id}
                           onClick={() => setSelectedAssignment(assignment)}
-                          className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all cursor-pointer opacity-75"
+                          className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 hover:shadow-md transition-all cursor-pointer opacity-75 hover:opacity-100"
                         >
-                          <div className="flex justify-between items-center">
-                            <div className="flex-1">
-                              <h4 className="text-lg font-medium text-gray-900">
-                                {assignment.project?.name || 'Unknown Project'}
-                              </h4>
-                              <div className="flex items-center mt-1 text-sm text-gray-600">
-                                <span className="mr-4">{assignment.role}</span>
-                                <span>Completed: {new Date(assignment.endDate).toLocaleDateString()}</span>
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-2">
+                                <h4 className="text-lg font-medium text-gray-900 truncate">
+                                  {assignment.project?.name || 'Unknown Project'}
+                                </h4>
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 ml-2 flex-shrink-0">
+                                  {assignment.allocationPercentage}%
+                                </span>
+                              </div>
+                              <div className="flex flex-col sm:flex-row sm:items-center text-sm text-gray-600 space-y-1 sm:space-y-0 sm:space-x-4">
+                                <span className="truncate">{assignment.role}</span>
+                                                               <span className="text-xs">Completed: {new Date(assignment.endDate).toLocaleDateString()}</span>
                               </div>
                             </div>
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                              {assignment.allocationPercentage}%
-                            </span>
                           </div>
                         </div>
                       ))}
@@ -556,84 +652,169 @@ export const EngineerDashboard: React.FC = () => {
             )}
 
             {activeTab === 'profile' && (
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-lg font-semibold text-gray-900 flex items-center">
-                    <User className="h-5 w-5 mr-2" />
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+                    <User className="h-6 w-6 mr-2" />
                     My Profile
                   </h2>
+                  <p className="text-gray-600 mt-1">View and manage your profile information</p>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
                   {/* Basic Information */}
-                  <div className="space-y-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Name
-                      </label>
-                      <p className="text-gray-900 font-medium text-lg">{user?.name}</p>
-                    </div>
+                  <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Basic Information</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Name
+                        </label>
+                        <div className="flex items-center">
+                          <div className="h-10 w-10 rounded-full bg-indigo-500 flex items-center justify-center mr-3">
+                            <span className="text-sm font-medium text-white">
+                              {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                            </span>
+                          </div>
+                          <p className="text-gray-900 font-medium text-lg">{user?.name}</p>
+                        </div>
+                      </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Email
-                      </label>
-                      <p className="text-gray-600">{user?.email}</p>
-                    </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Email
+                        </label>
+                        <p className="text-gray-600 bg-gray-50 px-3 py-2 rounded-md">{user?.email}</p>
+                      </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Department
-                      </label>
-                      <p className="text-gray-900">{user?.department || 'Not specified'}</p>
-                    </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Department
+                        </label>
+                        <p className="text-gray-900 bg-gray-50 px-3 py-2 rounded-md">{user?.department || 'Not specified'}</p>
+                      </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Seniority Level
-                      </label>
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                        user?.seniority === 'senior' ? 'bg-purple-100 text-purple-800' :
-                        user?.seniority === 'mid' ? 'bg-blue-100 text-blue-800' :
-                        user?.seniority === 'junior' ? 'bg-green-100 text-green-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {user?.seniority ? user.seniority.charAt(0).toUpperCase() + user.seniority.slice(1) : 'Not specified'}
-                      </span>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Employment Type
-                      </label>
-                      <p className="text-gray-900">
-                        {(user?.maxCapacity || 100) >= 100 ? 'Full-time' : 'Part-time'}
-                        <span className="text-gray-500 text-sm ml-2">
-                          ({user?.maxCapacity || 100}% capacity)
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Seniority Level
+                        </label>
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                          user?.seniority === 'senior' ? 'bg-purple-100 text-purple-800' :
+                          user?.seniority === 'mid' ? 'bg-blue-100 text-blue-800' :
+                          user?.seniority === 'junior' ? 'bg-green-100 text-green-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {user?.seniority ? user.seniority.charAt(0).toUpperCase() + user.seniority.slice(1) : 'Not specified'}
                         </span>
-                      </p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Employment Type
+                        </label>
+                        <div className="flex items-center space-x-2">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                            (user?.maxCapacity || 100) >= 100 ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {(user?.maxCapacity || 100) >= 100 ? 'Full-time' : 'Part-time'}
+                          </span>
+                          <span className="text-gray-500 text-sm">
+                            ({user?.maxCapacity || 100}% capacity)
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Skills Section */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-4">
-                      Skills
-                    </label>
-                    
-                    <div className="flex flex-wrap gap-2">
-                      {(user?.skills || []).length > 0 ? (
-                        user.skills.map((skill, index) => (
-                          <span
-                            key={index}
-                            className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800 font-medium"
-                          >
-                            {skill}
+                  {/* Skills and Capacity */}
+                  <div className="space-y-6">
+                    {/* Skills Section */}
+                    <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
+                      <h3 className="text-lg font-medium text-gray-900 mb-4">Skills & Expertise</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {(user?.skills || []).length > 0 ? (
+                          user.skills.map((skill, index) => (
+                            <span
+                              key={index}
+                              className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800 font-medium"
+                            >
+                              {skill}
+                            </span>
+                          ))
+                        ) : (
+                          <div className="text-center py-8 w-full">
+                            <AlertCircle className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                            <p className="text-gray-500 italic">No skills specified</p>
+                            <p className="text-gray-400 text-sm mt-1">Contact your manager to update your skills</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Capacity Information */}
+                    <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
+                      <h3 className="text-lg font-medium text-gray-900 mb-4">Capacity Information</h3>
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium text-gray-700">Maximum Capacity</span>
+                          <span className="text-lg font-bold text-gray-900">{user?.maxCapacity || 100}%</span>
+                        </div>
+                        
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium text-gray-700">Current Usage</span>
+                          <span className={`text-lg font-bold ${
+                            capacityUsed > (user?.maxCapacity || 100) ? 'text-red-600' :
+                            capacityUsed >= 80 ? 'text-yellow-600' : 'text-green-600'
+                          }`}>
+                            {capacityUsed}%
                           </span>
-                        ))
-                      ) : (
-                        <p className="text-gray-500 italic">No skills specified</p>
-                      )}
+                        </div>
+                        
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-medium text-gray-700">Available Capacity</span>
+                          <span className={`text-lg font-bold ${
+                            availableCapacity < 0 ? 'text-red-600' :
+                            availableCapacity <= 20 ? 'text-yellow-600' : 'text-green-600'
+                          }`}>
+                            {availableCapacity > 0 ? `${availableCapacity}%` : 'Overbooked'}
+                          </span>
+                        </div>
+
+                        <div className="pt-2">
+                          <div className="w-full bg-gray-200 rounded-full h-3">
+                            <div 
+                              className={`h-3 rounded-full transition-all duration-300 ${
+                                capacityUsed > (user?.maxCapacity || 100) ? 'bg-red-500' :
+                                capacityUsed >= 80 ? 'bg-yellow-500' : 'bg-green-500'
+                              }`}
+                              style={{ width: `${Math.min((capacityUsed / (user?.maxCapacity || 100)) * 100, 100)}%` }}
+                            />
+                          </div>
+                          <div className="flex justify-between text-xs text-gray-500 mt-1">
+                            <span>0%</span>
+                            <span>{user?.maxCapacity || 100}%</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Summary Stats */}
+                <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg p-6 text-white">
+                  <h3 className="text-lg font-medium mb-4">Career Summary</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold">{assignments.length}</div>
+                      <div className="text-sm opacity-90">Total Assignments</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold">{categorizedAssignments.activeAssignments.length}</div>
+                      <div className="text-sm opacity-90">Active Projects</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold">{categorizedAssignments.pastAssignments.length}</div>
+                      <div className="text-sm opacity-90">Completed Projects</div>
                     </div>
                   </div>
                 </div>
@@ -641,14 +822,16 @@ export const EngineerDashboard: React.FC = () => {
             )}
           </div>
         </div>
-      </div>
+      </main>
 
       {/* Assignment Detail Modal */}
-      <AssignmentDetailModal
-        assignment={selectedAssignment}
-        isOpen={!!selectedAssignment}
-        onClose={() => setSelectedAssignment(null)}
-      />
+      {selectedAssignment && (
+        <AssignmentDetailModal
+          assignment={selectedAssignment}
+          isOpen={!!selectedAssignment}
+          onClose={() => setSelectedAssignment(null)}
+        />
+      )}
     </div>
   );
 };
