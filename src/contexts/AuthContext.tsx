@@ -1,3 +1,4 @@
+// AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authService } from '../services/api';
 import { User } from '../types';
@@ -35,7 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (email: string, password: string) => {
-    const response = await authService.login(email, password);
+    await authService.login(email, password);
     const profile = await authService.getProfile();
     setUser({ ...profile, id: profile._id });
   };

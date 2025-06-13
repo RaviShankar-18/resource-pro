@@ -1,7 +1,7 @@
 // src/pages/engineer/EngineerDashboard.tsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { assignmentService } from '../../services/api';
+import { assignmentService, engineerService, projectService, normalizeId } from '../../services/api';
 import { Assignment } from '../../types';
 import { 
   User, 
@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 
 import AssignmentDetailModal from './components/assignments/AssignmentDetailModal';
+import SimpleCapacityCalendar from './components/calendar/SimpleCapacityCalendar';
 
 export const EngineerDashboard: React.FC = () => {
   const { user, logout } = useAuth();
@@ -33,35 +34,93 @@ export const EngineerDashboard: React.FC = () => {
         setIsLoading(true);
         setError(null);
         
-        const allAssignments = await assignmentService.getAll();
-        const engineerAssignments = allAssignments.filter(
-          (assignment: Assignment) => {
-            const assignmentEngineerId = typeof assignment.engineerId === 'object' 
-              ? assignment.engineerId.$oid || assignment.engineerId
-              : assignment.engineerId;
-            const currentUserId = user._id || user.id;
-            return assignmentEngineerId === currentUserId;
+        console.log('Current user ID:', user._id || user.id);
+        
+        // Method 1: Try to get engineer-specific assignments directly
+        try {
+          const engineerCapacity = await engineerService.getCapacity(user._id || user.id);
+          console.log('Engineer capacity response:', engineerCapacity);
+          
+          if (engineerCapacity && engineerCapacity.assignments && engineerCapacity.assignments.length > 0) {
+            // If we have assignments from capacity endpoint, enrich them with project details
+            const enrichedAssignments = await Promise.all(
+              engineerCapacity.assignments.map(async (assignment) => {
+                try {
+                  const projectDetails = await projectService.getById(assignment.projectId);
+                  return {
+                    _id: assignment._id || `capacity_${assignment.projectId}`,
+                    engineerId: user._id || user.id,
+                    projectId: assignment.projectId,
+                    allocationPercentage: assignment.allocationPercentage,
+                    startDate: assignment.startDate,
+                    endDate: assignment.endDate,
+                    role: assignment.role,
+                    project: projectDetails
+                  };
+                } catch (projectError) {
+                  console.error('Error fetching project details:', projectError);
+                  return {
+                    _id: assignment._id || `capacity_${assignment.projectId}`,
+                    engineerId: user._id || user.id,
+                    projectId: assignment.projectId,
+                    allocationPercentage: assignment.allocationPercentage,
+                    startDate: assignment.startDate,
+                    endDate: assignment.endDate,
+                    role: assignment.role,
+                    project: {
+                      name: assignment.projectName,
+                      status: 'unknown',
+                      description: 'Project details unavailable'
+                    }
+                  };
+                }
+              })
+            );
+            
+            setAssignments(enrichedAssignments);
+            setIsLoading(false);
+            return; // Early return if we successfully got assignments from capacity
           }
-        );
+        } catch (capacityError) {
+          console.warn('Could not fetch from capacity endpoint, falling back to all assignments:', capacityError);
+        }
+        
+        // Method 2: Fallback - get all assignments and filter on client
+        const allAssignments = await assignmentService.getAll();
+        console.log('All assignments:', allAssignments);
+        
+        const currentUserId = normalizeId(user._id || user.id);
+        console.log('Normalized user ID for comparison:', currentUserId);
+        
+        // Filter assignments for the current engineer
+        const engineerAssignments = allAssignments.filter((assignment: Assignment) => {
+          const assignmentEngineerId = normalizeId(assignment.engineerId);
+          console.log(`Comparing assignment engineerId: ${assignmentEngineerId} with currentUserId: ${currentUserId}`);
+          return assignmentEngineerId === currentUserId;
+        });
+        
+        console.log('Filtered engineer assignments:', engineerAssignments);
 
+        // Enrich assignments with project details
         const enrichedAssignments = await Promise.all(
           engineerAssignments.map(async (assignment: Assignment) => {
             try {
-              const projectId = typeof assignment.projectId === 'object' 
-                ? assignment.projectId.$oid || assignment.projectId
-                : assignment.projectId;
+              const projectId = normalizeId(assignment.projectId);
+              console.log('Fetching project details for:', projectId);
               
-              const projectDetails = await assignmentService.getProjectDetails(projectId);
+              const projectDetails = await projectService.getById(projectId);
+              console.log('Project details:', projectDetails);
               
               return {
                 ...assignment,
                 project: projectDetails
               };
             } catch (projectError) {
+              console.error('Error fetching project details:', projectError);
               return {
                 ...assignment,
                 project: {
-                  _id: assignment.projectId,
+                  _id: normalizeId(assignment.projectId),
                   name: 'Unknown Project',
                   description: 'Project details unavailable',
                   status: 'unknown',
@@ -76,6 +135,7 @@ export const EngineerDashboard: React.FC = () => {
           })
         );
 
+        console.log('Enriched assignments with project details:', enrichedAssignments);
         setAssignments(enrichedAssignments);
         setIsLoading(false);
       } catch (fetchError) {
@@ -113,7 +173,7 @@ export const EngineerDashboard: React.FC = () => {
   }, [categorizedAssignments.activeAssignments]);
 
   const availableCapacity = useMemo(() => {
-    return (user?.maxCapacity || 100) - capacityUsed;
+    return (user?.maxCapacity );
   }, [user?.maxCapacity, capacityUsed]);
 
   const getCapacityStatus = () => {
@@ -220,7 +280,7 @@ export const EngineerDashboard: React.FC = () => {
                 <CheckCircle className={`h-6 w-6 ${capacityStatus.color}`} />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Available Capacity</p>
+                <p className="text-sm font-medium text-gray-600">Max Capacity</p>
                 <p className={`text-2xl font-bold ${capacityStatus.color}`}>
                   {availableCapacity}%
                 </p>
@@ -307,13 +367,12 @@ export const EngineerDashboard: React.FC = () => {
                     )}
                   </div>
 
-                  {categorizedAssignments.activeAssignments.length > 0 && (
+                                    {categorizedAssignments.activeAssignments.length > 0 ? (
                     <div>
                       <h4 className="text-md font-medium text-gray-900 mb-3">
                         Active Assignments Breakdown
                       </h4>
                       <div className="space-y-3">
-                        // src/pages/engineer/EngineerDashboard.tsx (continuing from line 319)
                         {categorizedAssignments.activeAssignments.map((assignment) => (
                           <div key={assignment._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                             <div className="flex-1">
@@ -339,8 +398,18 @@ export const EngineerDashboard: React.FC = () => {
                         ))}
                       </div>
                     </div>
+                  ) : (
+                    <p className="text-gray-500 italic">No active assignments</p>
                   )}
                 </div>
+
+                {/* Capacity Calendar */}
+                {assignments.length > 0 && (
+                  <div className="mb-8">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Capacity Forecast</h3>
+                    <SimpleCapacityCalendar assignments={assignments} />
+                  </div>
+                )}
               </div>
             )}
 
