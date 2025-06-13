@@ -6,7 +6,7 @@ A comprehensive web application for managing engineering teams, projects, and re
 
 ## 🚀 Live Demo
 
-- **Frontend**: [Live Application](https://engineering-resource-management-frontend.vercel.app)
+- **Frontend**: [Live Application](https://resource-pro.vercel.app/)
 - **Backend API**: [Live](https://engineering-resource-api.vercel.app/)
 - **Backend Repository**: [GitHub - Backend API](https://github.com/RaviShankar-18/engineering-resource-api)
 
@@ -55,8 +55,8 @@ The Engineering Resource Management System is a modern web application designed 
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/RaviShankar-18/engineering-resource-management-frontend.git
-   cd engineering-resource-management-frontend
+   git clone https://github.com/RaviShankar-18/resource-pro.git
+   cd resource-pro
    ```
 
 2. **Install dependencies**
